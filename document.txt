@@ -1,0 +1,12 @@
+press P to Pause;
+Press O to continue;
+
+Touch the purple cube to lose game;
+Touch the cube which in the bottom of the hill to win game;
+
+use direction key to control player ball in maze;
+touche them to respawn enemy;
+
+PS:I banned the damping and only used friction.
+The maze AI still has some bugs, and these bugs happen depend on the timer of
+different CPU.
