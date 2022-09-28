@@ -739,8 +739,8 @@ bool CollisionDetection::CapsuleIntersection(
 	const float deltaLength = delta.Length();
 
 	//debug
-	if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::I))
-		return true;
+	//if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::I))
+	//	return true;
 
 	if (deltaLength < radii) {
 		float penetration = (radii - deltaLength);
@@ -765,90 +765,58 @@ Vector3 ClosestPointOnLineSegment(Vector3 pointA, Vector3 pointB, Vector3 point)
 	return pointA + line * Maths::Clamp(proj_to_line, 0.0f, 1.0f);
 }
 
-/*
-bool CollisionDetection::AABBCapsuleIntersection_uncomplete(
-	const AABBVolume& volumeA, const Transform& worldTransformA,
-	const CapsuleVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo) {
-
-	Vector3 box_position = worldTransformA.GetPosition();
-	Vector3 boxSize = volumeA.GetHalfDimensions();
-
-	Vector3 capsule_position = worldTransformB.GetPosition();
-	float half_height = volumeB.GetHalfHeight();
-	float capsule_radius = volumeB.GetRadius();
-	//
-	Vector3 pointA = capsule_position +
-		worldTransformB.GetOrientation() * Vector3(0, volumeB.GetHalfHeight() / 2, 0);
-	Vector3 pointB = capsule_position +
-		worldTransformB.GetOrientation() * Vector3(0, -volumeB.GetHalfHeight() / 2, 0);
-
-
-	Vector3 middle_line = pointA - pointB;
-	middle_line.Normalise();
-
-	Vector3 relevent_vector = box_position - capsule_position;
-	Vector3 pointA_to_box = box_position - pointA;
-	Vector3 pointB_to_box = box_position - pointB;
-	//
-	float proj_relevent = Vector3::Dot(relevent_vector, middle_line);
-	float proj_pointA_to_box = Vector3::Dot(pointA_to_box, relevent_vector);
-	float proj_pointB_to_box = Vector3::Dot(pointB_to_box, relevent_vector);
-
-	Vector3 best_point = capsule_position + middle_line * Maths::Clamp(proj_relevent, -1.0f, 1.0f);
-
-	//
-	Vector3 delta = best_point - box_position;
-
-	Vector3 closestPointOnBox = Maths::Clamp(delta, -boxSize, boxSize);
-
-	Vector3 localPoint = delta - closestPointOnBox;
-	float distance = localPoint.Length();
-
-	//debug
-	//if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::I))
-		//return true;
-
-	if (distance < volumeB.GetRadius()) {//yes , we¡¯re colliding!
-		Vector3 collisionNormal = localPoint.Normalised();
-		float penetration = (volumeB.GetRadius() - distance);
-
-		Vector3 localA = Vector3();//
-		Vector3 localB = -collisionNormal * volumeB.GetRadius();
-
-		collisionInfo.AddContactPoint(localA, localB, collisionNormal, penetration);
-		return true;
-	}
-
-	return false;
+float GetT(const Vector3& planeNormal, const float& planeDistance, const Vector3& startPoint, const Vector3& endPoint) {
+	return (planeDistance - Vector3::Dot(startPoint, planeNormal)) / (Vector3::Dot(planeNormal, endPoint - startPoint));
 }
-*/
+
+float GetBest(const float* values) {
+	float result = INFINITE;
+	for (int i = 0; i < 6; ++i) {
+		if (fabsf(values[i]) < fabsf(result)) {
+			result = values[i];
+		}
+	}
+	return result;
+}
 
 bool CollisionDetection::AABBCapsuleIntersection(
 	const AABBVolume& volumeA, const Transform& worldTransformA,
 	const CapsuleVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo) {
+
+	const Vector3& boxSize = volumeA.GetHalfDimensions();
+
+	Vector3 capsuleDirection = worldTransformB.GetOrientation() * Vector3(0, 1.0f, 0);
+	Vector3 startPoint = worldTransformB.GetPosition() - capsuleDirection * volumeB.GetHalfHeight()*0.5
+		- worldTransformA.GetPosition();
+	Vector3 endPoint = worldTransformB.GetPosition() + capsuleDirection * volumeB.GetHalfHeight()*0.5
+		- worldTransformA.GetPosition();
+
+	float valueT[6];
+
+	valueT[0] = GetT(Vector3(1, 0, 0), boxSize[0], startPoint, endPoint);
+	valueT[1] = GetT(Vector3(-1, 0, 0), boxSize[0], startPoint, endPoint);
+	valueT[2] = GetT(Vector3(0, 1, 0), boxSize[1], startPoint, endPoint);
+	valueT[3] = GetT(Vector3(0, -1, 0), boxSize[1], startPoint, endPoint);
+	valueT[4] = GetT(Vector3(0, 0, 1), boxSize[2], startPoint, endPoint);
+	valueT[5] = GetT(Vector3(0, 0, -1), boxSize[2], startPoint, endPoint);
+
+	float bestT = Clamp<float>(GetBest(valueT), 0, 1);
+
+	if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::I))
+		bool a = true;
+
+	Vector3 startToEnd = endPoint - startPoint;
+	Vector3 result = startPoint + startToEnd * bestT;
 	
-	bool result;
+	Vector3 cloesetPoint = Clamp(result, -volumeA.GetHalfDimensions(), volumeA.GetHalfDimensions());
+	bestT = Vector3::Dot((cloesetPoint - startPoint), startToEnd) / startToEnd.LengthSquared();
+	bestT = Clamp<float>(bestT, 0, 1);
+	result = startPoint + startToEnd * bestT;
 
-	Vector3 box_position = worldTransformA.GetPosition();
-	Vector3 boxSize = volumeA.GetHalfDimensions();
-
-	Vector3 capsule_position = worldTransformB.GetPosition();
-	float half_height = volumeB.GetHalfHeight();
-	float capsule_radius = volumeB.GetRadius();
-
-	Vector3 pointA = capsule_position +
-		worldTransformB.GetOrientation() * Vector3(0, half_height / 2, 0);
-	Vector3 pointB = capsule_position +
-		worldTransformB.GetOrientation() * Vector3(0, -half_height / 2, 0);
-
-	//check A
-	Vector3 delta = pointA - box_position;
-
-	Vector3 closestPointOnBox = Maths::Clamp(delta, -boxSize, boxSize);
-
-	Vector3 localPoint = delta - closestPointOnBox;
+	Vector3 localPoint = result - cloesetPoint;
 	float distance = localPoint.Length();
-	if (distance < volumeB.GetRadius()) {//yes , we¡¯re colliding!
+
+	if (distance <= volumeB.GetRadius()) {//yes, we¡¯re colliding!
 		Vector3 collisionNormal = localPoint.Normalised();
 		float penetration = (volumeB.GetRadius() - distance);
 
@@ -858,24 +826,5 @@ bool CollisionDetection::AABBCapsuleIntersection(
 		collisionInfo.AddContactPoint(localA, localB, collisionNormal, penetration);
 		return true;
 	}
-
-	//check B
-	delta = pointB - box_position;
-
-	closestPointOnBox = Maths::Clamp(delta, -boxSize, boxSize);
-
-	localPoint = delta - closestPointOnBox;
-	distance = localPoint.Length();
-	if (distance < volumeB.GetRadius()) {//yes , we¡¯re colliding!
-		Vector3 collisionNormal = localPoint.Normalised();
-		float penetration = (volumeB.GetRadius() - distance);
-
-		Vector3 localA = Vector3();//
-		Vector3 localB = -collisionNormal * volumeB.GetRadius();
-
-		collisionInfo.AddContactPoint(localA, localB, collisionNormal, penetration);
-		return true;
-	}
-
 	return false;
 }

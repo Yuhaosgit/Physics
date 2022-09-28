@@ -176,10 +176,10 @@ void TutorialGame::navigate_obj() {
 
 
 void TutorialGame::UpdateGame(float dt) {
-	if (CollisionDetection::ObjectIntersection(WinnerBall, CoreBall, CollisionDetection::CollisionInfo())) {
+	if (WinnerBall != nullptr && CoreBall != nullptr &&
+		CollisionDetection::ObjectIntersection(WinnerBall, CoreBall, CollisionDetection::CollisionInfo())) {
 		END = true;
 	}
-
 
 	if (!inSelectionMode) {
 		world->GetMainCamera()->UpdateCamera(dt);
@@ -226,18 +226,22 @@ void TutorialGame::UpdateGame(float dt) {
 		//Debug::DrawAxisLines(lockedObject->GetTransform().GetMatrix(), 2.0f);
 	}
 
-	for (int i = 0; i < 5; ++i) {
-		Vector3 front = net[i]->GetTransform().GetPosition();
-		Vector3 back = net[i + 1]->GetTransform().GetPosition();
+	if (net[0] != nullptr) {
+		for (int i = 0; i < 5; ++i) {
+			Vector3 front = net[i]->GetTransform().GetPosition();
+			Vector3 back = net[i + 1]->GetTransform().GetPosition();
 
-		Debug::DrawLine(front, back, Vector4(1, 1, 0, 1));
+			Debug::DrawLine(front, back, Vector4(1, 1, 0, 1));
+		}
 	}
 
-	for (int i = 0; i < 2; ++i) {
-		Vector3 front = constraint_ball[i]->GetTransform().GetPosition();
-		Vector3 back = constraint_ball[i + 1]->GetTransform().GetPosition();
+	if (constraint_ball[0] != nullptr) {
+		for (int i = 0; i < 2; ++i) {
+			Vector3 front = constraint_ball[i]->GetTransform().GetPosition();
+			Vector3 back = constraint_ball[i + 1]->GetTransform().GetPosition();
 
-		Debug::DrawLine(front, back, Vector4(1, 1, 0, 1));
+			Debug::DrawLine(front, back, Vector4(1, 1, 0, 1));
+		}
 	}
 
 	world->UpdateWorld(dt);
@@ -459,6 +463,13 @@ void TutorialGame::InitWorld() {
 	InitBonus();
 	InitNet();
 	InitStateMachine();
+	//InitDebug();
+}
+
+void TutorialGame::InitDebug() {
+	AddCapsuleToWorld(Vector3(0, 10, 0), 4, 2);
+	AddCubeToWorld(Vector3(0, 4, 4), Vector3(2, 2, 2));
+	AddFloorToWorld(Vector3(0, -2, 0), Vector3(100, 2, 50), false, WOODEN, 0.8, Vector4(0.8, 0, 0.1, 1));
 }
 
 void TutorialGame::InitMaze() {
@@ -652,11 +663,13 @@ void TutorialGame::InitBonus() {
 void TutorialGame::InitNet() {
 	Vector3 offset = Vector3(0, 0, -30);
 
-	net[0] = AddCapsuleToWorld(Vector3(-30, 2, 0) + offset, 2, 1);
+	//net[0] = AddCapsuleToWorld(Vector3(-30, 2, 0) + offset, 2, 1);
+	net[0] = AddSphereToWorld(Vector3(-30, 2, 0) + offset, 2, 1);
 	net[1] = AddCubeToWorld(Vector3(-30, 2, 10) + offset, Vector3(2, 2, 2));
 	net[2] = AddSphereToWorld(Vector3(-30, 2, 20) + offset, 2, 1);
 
-	net[3] = AddCapsuleToWorld(Vector3(-30, 2, 30) + offset, 2, 1);
+	//net[3] = AddCapsuleToWorld(Vector3(-30, 2, 30) + offset, 2, 1);
+	net[3] = AddSphereToWorld(Vector3(-30, 2, 30) + offset, 2, 1);
 	net[4] = AddCubeToWorld(Vector3(-30, 2, 40) + offset, Vector3(2, 2, 2), 1);
 	net[5] = AddSphereToWorld(Vector3(-30, 2, 50) + offset, 2, 1);
 
@@ -668,7 +681,6 @@ void TutorialGame::InitNet() {
 		world->AddConstraint(constraint);
 		previous = net[i];
 	}
-
 }
 
 

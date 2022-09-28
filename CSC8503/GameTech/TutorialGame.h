@@ -88,6 +88,7 @@ namespace NCL {
 			void InitBonus();
 			void InitNet();
 			void InitStateMachine();
+			void InitDebug();
 
 			//state machine
 			std::vector<StateGameObject*> state_machine_objects;
